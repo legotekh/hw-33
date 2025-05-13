@@ -1,42 +1,55 @@
 const gulp = require('gulp');
 const sass = require('gulp-sass')(require('sass'));
-const postcss = require('gulp-postcss');  // Додано для використання автопрефіксера
-const autoprefixer = require('autoprefixer');  // Автопрефіксатор
+const postcss = require('gulp-postcss');
+const autoprefixer = require('autoprefixer');
 const cleanCSS = require('gulp-clean-css');
 const sourcemaps = require('gulp-sourcemaps');
 const rename = require('gulp-rename');
 const browserSync = require('browser-sync').create();
 
 const paths = {
-  scss: {
-    src: 'src/scss/**/*.scss',
-    dest: 'dist/css'
-  },
   html: {
     src: 'src/*.html',
     dest: 'dist/'
+  },
+  styles: {
+    src: 'src/scss/**/*.scss',
+    dest: 'dist/css/'
+  },
+  scripts: {
+    src: 'src/js/**/*.js',
+    dest: 'dist/js/'
   }
 };
 
+// Обробка SCSS
 function styles() {
-  return gulp.src(paths.scss.src)
+  return gulp.src(paths.styles.src)
     .pipe(sourcemaps.init())
-    .pipe(sass().on('error', sass.logError))  // Скомпілювати SCSS у CSS
-    .pipe(postcss([autoprefixer()]))  // Використовуємо autoprefixer через postcss
-    .pipe(gulp.dest(paths.scss.dest))
-    .pipe(cleanCSS())  // Мінімізувати CSS
-    .pipe(rename({ suffix: '.min' }))  // Додати суфікс .min
+    .pipe(sass().on('error', sass.logError))
+    .pipe(postcss([autoprefixer()]))
+    .pipe(cleanCSS())
+    .pipe(rename({ suffix: '.min' }))
     .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest(paths.scss.dest))
+    .pipe(gulp.dest(paths.styles.dest))
     .pipe(browserSync.stream());
 }
 
+// Копіювання HTML
 function html() {
   return gulp.src(paths.html.src)
     .pipe(gulp.dest(paths.html.dest))
     .pipe(browserSync.stream());
 }
 
+// Копіювання JS
+function scripts() {
+  return gulp.src(paths.scripts.src)
+    .pipe(gulp.dest(paths.scripts.dest))
+    .pipe(browserSync.stream());
+}
+
+// Сервер + стеження
 function serve() {
   browserSync.init({
     server: {
@@ -44,11 +57,14 @@ function serve() {
     }
   });
 
-  gulp.watch(paths.scss.src, styles);
+  gulp.watch(paths.styles.src, styles);
   gulp.watch(paths.html.src, html);
+  gulp.watch(paths.scripts.src, scripts);
 }
 
+// Експорти
 exports.styles = styles;
 exports.html = html;
-exports.serve = gulp.series(styles, html, serve);
+exports.scripts = scripts;
+exports.serve = gulp.series(styles, html, scripts, serve);
 exports.default = exports.serve;
